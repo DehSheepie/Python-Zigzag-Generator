@@ -1,41 +1,54 @@
 import random
 
-HEX_CHARS = "0123456789ABCDEF"
 MAX_HEIGHT = 500
 MAX_WIDTH = 200
 
 
+def gen_seed() -> str:
+    return f"{hex(random.randint(0, 0xffff))[2:]:0>4}"
+
+
 class Graph:
     """
-    This class stores the nodes in the zigzag
+    Class for the list of nodes in the zigzag
     """
 
-    def __init__(self, nodes: [(int, int)]):
-        self.__nodes = nodes
+    HEX = "0123456789abcdef"
+
+    def __init__(self, seed: str = "ffff", density=5, zagginess=5):
+        self.__seed = seed
+        self.__nodes = []
+        self.__density = density
+        self.__zagginess = zagginess
+        self.gen_graph()
+
+    def get_value(self, index, count):
+        num = Graph.HEX.index(self.__seed[index]) + 1
+
+        return ((num * count) % 0xf) + 1
 
     def get_nodes(self):
         return self.__nodes
 
-
-def get_seed() -> hex:
-    return random.randint(0, 65535)
-
-
-def get_values(seed):
-    values = []
-    num = seed
-    # We are going to get each of the numbers inside of the seed
-    while True:
-        i = num % 0xf
-        values.insert(0, HEX_CHARS[i])
-        if num // 0xf == 0:
-            break
-        num //= 0xf  # int div to shift the hex
-    return values
-
-
-def generate_nodes(seed: hex):
-    pass
-
-
-print(get_values(get_seed()))
+    def gen_graph(self) -> [(int, int)]:
+        x = MAX_WIDTH // 2
+        y = MAX_HEIGHT
+        y_seg = MAX_HEIGHT // self.__density  # segment size
+        y_variance = (y_seg // 0xf) + 1  # prevent 0 values
+        x_seg = MAX_WIDTH // self.__zagginess  # segment size
+        x_variance = (x_seg // 0xf) + 1
+        counter = 1
+        flip = False
+        while True:
+            if y == 0:
+                break
+            y -= y_variance
+            if y < 0:
+                y = 0
+            if flip:
+                x -= x_seg
+            else:
+                x += x_seg
+            if x > MAX_WIDTH - 20 or x < 20:
+                flip = not flip
+            self.__nodes.append((x, y))
